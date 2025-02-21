@@ -1,39 +1,60 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.13;
 
-import {ERC721URIStorage} from "lib/openzeppelin-contracts/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
-import {ERC721} from "lib/openzeppelin-contracts/contracts/token/ERC721/ERC721.sol";
+import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/utils/Base64.sol";
+import "@openzeppelin/contracts/utils/Strings.sol";
 
-contract NFTCertificate is ERC721URIStorage {
-    uint265 private _tokenId;
-    constructor() ERC721("Made Praba Jaya Kusuma", "PRB") {}
+contract NFTCertificate is ERC721URIStorage, Ownable {
+    // Custom errors
+    error CannotTransfer();
+    error CannotApprove();
+    error CannotApprovalForAll();
 
-    event minted(uint256 indexed tokenId, address indexed owner, string uri);
+    uint256 private _tokenIdCounter;
 
+    constructor() ERC721("Made Praba Jaya Kusuma", "PRB") Ownable() {}
 
-    function createMetadata(string memory base64Image) private pure returns (string memory) {
-        return string(abi.encodePacked("data:image/png;base64,", base64Image));
-    }
+    event Minted(address indexed to, uint256 indexed tokenId, string uri);
 
-    function mintNFT(address owner, string memory name, string memory description, string memory imageUrl) public onlyOwner{
-        uint256 tokenId = _tokenId++;
+    // Minting NFT with dynamic metadata
+    function mintNFT(string memory name, string memory description, string memory image_url) public onlyOwner {
+        uint256 tokenId = ++_tokenIdCounter;
 
-        string memory metadata = string(abi.encodePacked(
-            '{"name":"', name, '",',
-            '"description":"', description, '",',
-            '"image":"', imageUrl, '"}'
-        ));
-        string memory tokenURI = string(abi.encodePacked("data:application/json;base64,", base64(bytes(metadata))));
+        string memory tokenURI = _createMetadata(name, description, image_url);
+        require(bytes(tokenURI).length > 0, "Token URI cannot be empty");
 
-        _mint(owner, tokenId);
+        _mint(msg.sender, tokenId);
         _setTokenURI(tokenId, tokenURI);
-        emit minted(tokenId, owner, tokenURI);
+        emit Minted(msg.sender, tokenId, tokenURI);
     }
 
+    // Create dynamic metadata for NFT
+    function _createMetadata(string memory name, string memory description, string memory image_url)
+        private
+        pure
+        returns (string memory)
+    {
+        string memory metadata = string(
+            abi.encodePacked(
+                '{"name":"', name, '",', '"description":"', description, '",', '"image":"', image_url, '"}'
+            )
+        );
+        metadata = Base64.encode(bytes(metadata));
+        return string(abi.encodePacked("data:application/json;base64,", metadata));
+    }
 
+    // Preventions
+    function transferFrom(address, address, uint256) public pure override(ERC721, IERC721) {
+        revert CannotTransfer();
+    }
 
-    function _transfer(address from, address to, uint256 tokenId) internal virtual override {
-        require(from == address(0) || to == address(0), "Soulbound token: transfer is not allowed.");
-        super._transfer(from, to, tokenId);
-    }
+    function approve(address, uint256) public pure override(ERC721, IERC721) {
+        revert CannotApprove();
+    }
+
+    function setApprovalForAll(address, bool) public pure override(ERC721, IERC721) {
+        revert CannotApprovalForAll();
+    }
 }
