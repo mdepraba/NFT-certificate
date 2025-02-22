@@ -9,12 +9,8 @@ contract DeployNFTCertificate is Script {
         vm.startBroadcast();
 
         // Deploy NFTCertificate contract
-        NFTCertificate nftCertificate = new NFTCertificate();
-        nftCertificate.mintNFT(
-            "Mandala Academy NFT #1",
-            "A certificate NFT that student already completed the course",
-            "https://ipfs.io/ipfs/bafkreigxnhhmoeyg5vjfcrlr4yluostuxuivpehn77i5uzt4uc4e5zdp2i"
-        );
+        NFTCertificate nftCertificate = NFTCertificate(0xb136E5F8Ddf6f62d9f4a3d04B1Ac1c1DC9399835);
+        nftCertificate.mintNFT("");
 
         vm.stopBroadcast();
     }

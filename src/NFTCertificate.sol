@@ -14,15 +14,32 @@ contract NFTCertificate is ERC721URIStorage, Ownable {
 
     uint256 private _tokenIdCounter;
 
-    constructor() ERC721("Made Praba Jaya Kusuma", "PRB") Ownable() {}
-
     event Minted(address indexed to, uint256 indexed tokenId, string uri);
 
+    constructor() ERC721("Made Praba Jaya Kusuma", "PRB") {}
+
+    function _createMetadata(string memory base64Image, uint256 certificateId) private pure returns (string memory) {
+        bytes memory metadata = abi.encodePacked(
+            "{",
+            '"name": "#Praba from Mandala Academy#',
+            Strings.toString(certificateId),
+            '", ',
+            '"description": "A certificate NFT that student already completed the course", ',
+            '"image_url": "',
+            "https://ipfs.io/ipfs/bafkreigxnhhmoeyg5vjfcrlr4yluostuxuivpehn77i5uzt4uc4e5zdp2i",
+            base64Image,
+            '"',
+            "}"
+        );
+
+        return string(abi.encodePacked("data:application/json;base64,", Base64.encode(metadata)));
+    }
     // Minting NFT with dynamic metadata
-    function mintNFT(string memory name, string memory description, string memory image_url) public onlyOwner {
+
+    function mintNFT(string memory base64Image) public onlyOwner {
         uint256 tokenId = ++_tokenIdCounter;
 
-        string memory tokenURI = _createMetadata(name, description, image_url);
+        string memory tokenURI = _createMetadata(base64Image, tokenId);
         require(bytes(tokenURI).length > 0, "Token URI cannot be empty");
 
         _mint(msg.sender, tokenId);
@@ -31,19 +48,6 @@ contract NFTCertificate is ERC721URIStorage, Ownable {
     }
 
     // Create dynamic metadata for NFT
-    function _createMetadata(string memory name, string memory description, string memory image_url)
-        private
-        pure
-        returns (string memory)
-    {
-        string memory metadata = string(
-            abi.encodePacked(
-                '{"name":"', name, '",', '"description":"', description, '",', '"image":"', image_url, '"}'
-            )
-        );
-        metadata = Base64.encode(bytes(metadata));
-        return string(abi.encodePacked("data:application/json;base64,", metadata));
-    }
 
     // Preventions
     function transferFrom(address, address, uint256) public pure override(ERC721, IERC721) {
