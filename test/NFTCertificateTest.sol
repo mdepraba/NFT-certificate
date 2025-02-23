@@ -5,39 +5,48 @@ import "forge-std/Test.sol";
 import "../src/NFTCertificate.sol";
 
 contract NFTCertificateTest is Test {
-// NFTCertificate private nftCertificate;
-// address private owner = address(this);
-// address private recipient = address(0x123);
-// string private base64Image = "your_base64_encoded_image_here";
+    NFTCertificate nft;
+    address owner = address(0x1);
+    address nonOwner = address(0x2);
+    string base64Image = "testImageBase64";
 
-// function setUp() public {
-//     nftCertificate = new NFTCertificate();
-// }
+    function setUp() public {
+        vm.prank(owner);
+        nft = new NFTCertificate();
+    }
 
-// function testDeployment() public {
-//     assertEq(nftCertificate.name(), "Made Praba Jaya Kusuma");
-//     assertEq(nftCertificate.symbol(), "PRB");
-// }
+    function testMintNFT() public {
+        vm.prank(owner);
+        nft.mintNFT(base64Image);
+        
+        assertEq(nft.ownerOf(1), owner);
+        assertTrue(bytes(nft.tokenURI(1)).length > 0);
+    }
 
-// function testMintNFT() public {
-//     nftCertificate.mintNFT(recipient, base64Image);
-//     assertEq(nftCertificate.ownerOf(0), recipient);
-// }
+    function test_RevertWhen_NonOwnerMintsNFT() public {
+        vm.prank(nonOwner);
+        vm.expectRevert("Ownable: caller is not the owner");
+        nft.mintNFT(base64Image);
+    }
 
-// function testSoulboundTransfer() public {
-//     nftCertificate.mintNFT(recipient, base64Image);
-//     vm.expectRevert(NFTCertificate.CannotTransfer.selector);
-//     nftCertificate.transferFrom(recipient, address(0x456), 0);
-// }
+    function testCannotTransferNFT() public {
+        vm.prank(owner);
+        nft.mintNFT(base64Image);
 
-// function testSoulboundApprove() public {
-//     nftCertificate.mintNFT(recipient, base64Image);
-//     vm.expectRevert(NFTCertificate.CannotApprove.selector);
-//     nftCertificate.approve(address(0x456), 0);
-// }
+        vm.expectRevert(NFTCertificate.CannotTransfer.selector);
+        nft.transferFrom(owner, nonOwner, 1);
+    }
 
-// function testSoulboundSetApprovalForAll() public {
-//     vm.expectRevert(NFTCertificate.CannotApprovalForAll.selector);
-//     nftCertificate.setApprovalForAll(address(0x456), true);
-// }
+    function testCannotApproveNFT() public {
+        vm.prank(owner);
+        nft.mintNFT(base64Image);
+
+        vm.expectRevert(NFTCertificate.CannotApprove.selector);
+        nft.approve(nonOwner, 1);
+    }
+
+    function testCannotSetApprovalForAll() public {
+        vm.expectRevert(NFTCertificate.CannotApprovalForAll.selector);
+        nft.setApprovalForAll(nonOwner, true);
+    }
 }
